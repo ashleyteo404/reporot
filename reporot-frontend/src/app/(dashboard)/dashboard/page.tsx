@@ -36,8 +36,16 @@ const howItWorks = [
   },
 ];
 
+const REPO_IMAGES = [
+  'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1522199710521-72d69614c702?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1504639725590-34d0984388bd?auto=format&fit=crop&w=1200&q=80',
+];
+
 export default async function DashboardPage() {
-  const videos = await getVideos();
+  const allVideos = await getVideos();
+  const videos = allVideos.slice(0, 4);
 
   return (
     <main className="relative overflow-hidden bg-[#070f1d] text-slate-50 min-h-screen">
@@ -103,7 +111,7 @@ export default async function DashboardPage() {
                 <p className="text-slate-400 italic text-lg">No videos generated yet. Drop a URL above to start cooking!</p>
               </div>
             ) : (
-              videos.map((video) => (
+              videos.map((video, index) => (
                 <Link
                   key={video.id}
                   href={`/tiktok?v=${video.id}`}
@@ -114,7 +122,7 @@ export default async function DashboardPage() {
                   <div className="relative h-56 w-full overflow-hidden">
                     <div
                       className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-110"
-                      style={{ backgroundImage: `url(https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80)` }}
+                      style={{ backgroundImage: `url(${REPO_IMAGES[index % REPO_IMAGES.length]})` }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0d1626] via-transparent to-transparent" />
                     <div className="absolute inset-0 bg-emerald-950/20 opacity-0 group-hover:opacity-100 transition-opacity" />
