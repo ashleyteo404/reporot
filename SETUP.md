@@ -9,8 +9,9 @@ Once everything is set up, here are the commands to run both servers:
 **Terminal 1 - Backend:**
 ```powershell
 cd reporot-backend
-uv run uvicorn app.main:app --reload --port 8000
+.\.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000
 ```
+> Note: database is disabled by default (`DB_DISABLED=true`) so the API can start without Postgres. Flip it to `false` in `.env.development` when you want to connect to a real DB.
 
 **Terminal 2 - Frontend:**
 ```powershell
@@ -31,7 +32,6 @@ Before you begin, ensure you have the following installed on your system:
 - **Node.js 18+** and **npm/pnpm** - [Download Node.js](https://nodejs.org/)
 - **PostgreSQL** (Optional) - Only needed if using local PostgreSQL. For fastest MVP setup, use [Supabase](https://supabase.com/) (cloud, free, no installation needed)
 - **Docker** (Optional) - Only needed if using Docker Compose for local database
-- **uv** (Python package manager) - Will be installed automatically or install manually: `pip install uv`
 - **Git** - [Download Git](https://git-scm.com/downloads)
 
 ## Step 1: Clone the Repository
@@ -53,14 +53,19 @@ cd reporot-backend
 
 ### 2.2 Install Python Dependencies
 
-The backend uses `uv` for dependency management. Install dependencies:
+Create a virtual environment and install dependencies with pip:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python -m pip install --upgrade pip
+.\.venv\Scripts\python -m pip install -e ".[dev]"
+```
 
 ```bash
-# Install uv if not already installed
-pip install uv
-
-# Install all dependencies
-uv sync
+python -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -e ".[dev]"
 ```
 
 This will:
@@ -167,11 +172,11 @@ The application automatically creates all required tables when it starts for the
 cd reporot-backend
 
 # Start the server (recommended)
-uv run uvicorn app.main:app --reload --port 8000
+.\.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000
 
 # Alternative: Activate virtual environment first
 .venv\Scripts\activate
-uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
 **Linux/Mac:**
@@ -184,7 +189,7 @@ cd reporot-backend
 make dev
 
 # Alternative: Manual start
-uv run uvicorn app.main:app --reload --port 8000 --loop uvloop
+./.venv/bin/python -m uvicorn app.main:app --reload --port 8000
 ```
 
 **✅ Backend will be running at:** `http://localhost:8000`
@@ -330,11 +335,11 @@ npm run dev
 - Ensure database exists: `psql -U postgres -l` to list databases
 
 **Problem: Module not found errors**
-- Run `uv sync` again to ensure all dependencies are installed
+- Reinstall dependencies: `.venv\Scripts\python -m pip install -e ".[dev]"` (Windows) or `pip install -e ".[dev]"` after activating your venv
 - Activate virtual environment: `.venv\Scripts\activate` (Windows) or `source .venv/bin/activate` (Mac/Linux)
 
 **Problem: uvloop installation error on Windows**
-- This is expected! `uvloop` doesn't support Windows. The application will work fine without it using the default asyncio event loop. The dependency has been made optional, so installation should succeed.
+- This is expected! `uvloop` doesn't support Windows. The application will work fine without it using the default asyncio event loop, and pip will skip installing it on Windows.
 
 **Problem: Port 8000 already in use**
 - Change port in Makefile or command: `uvicorn app.main:app --reload --port 8001`
@@ -375,7 +380,7 @@ You'll need two terminal windows:
 **Terminal 1 - Backend:**
 ```powershell
 cd reporot-backend
-uv run uvicorn app.main:app --reload --port 8000
+.\.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000
 ```
 
 **Terminal 2 - Frontend:**
