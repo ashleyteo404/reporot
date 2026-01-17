@@ -6,12 +6,17 @@ Send a GitHub repo link and get back the generated video as:
 """
 
 import base64
+import logging
 import re
 import tempfile
 import uuid
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import StreamingResponse, Response, FileResponse
@@ -24,16 +29,16 @@ from src.summarizer import summarize_readme
 from src.tts import generate_speech, VOICES, VOICE_MAPPING, DEFAULT_VOICE
 from src.captions import generate_captions_from_script
 from src.composer import compose_video, get_background_video
-
-# Load environment variables
-load_dotenv()
+from src.r2_utils import uploader
 
 # Configuration
-JOBS_DIR = Path("jobs")
-JOBS_DIR.mkdir(exist_ok=True)
-OUTPUT_DIR = Path("output")
+BASE_DIR = Path(__file__).parent.resolve()
+
+# Load environment variables
+load_dotenv(BASE_DIR / ".env", override=True)
+OUTPUT_DIR = BASE_DIR / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
-BACKGROUNDS_DIR = Path("backgrounds")
+BACKGROUNDS_DIR = BASE_DIR / "backgrounds"
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -67,6 +72,10 @@ class GenerateVideoRequest(BaseModel):
     voice: str = Field(
         default=DEFAULT_VOICE,
         description=f"TTS voice to use. Options: {', '.join(VOICES[:5])}..."
+    )
+    subtitle_style: str = Field(
+        default="brainrot",
+        description="Subtitle style: 'brainrot' (large, rapid) or 'standard' (readable, bottom)"
     )
     
     @field_validator("github_url")
@@ -105,20 +114,11 @@ class GenerateVideoRequest(BaseModel):
         return v
 
 
-class JobStatusResponse(BaseModel):
-    """Response for job status."""
-    job_id: str
-    status: str
-    progress: Optional[str] = None
-    error: Optional[str] = None
-    download_url: Optional[str] = None
-
-
 # ===========================================================================
 #  Video Generation Logic
 # ===========================================================================
 
-def _generate_video_sync(github_url: str, voice: str, output_path: Path) -> Path:
+def _generate_video_sync(github_url: str, voice: str, output_path: Path, subtitle_style: str = "brainrot") -> Path:
     """
     Synchronously generate a brainrot video from a GitHub repo.
     
@@ -140,6 +140,14 @@ def _generate_video_sync(github_url: str, voice: str, output_path: Path) -> Path
         # 2. Generate brainrot script
         print("Generating brainrot script...")
         script = summarize_readme(readme_content)
+
+        # Save script to file for inspection
+        try:
+            script_path = output_path.with_suffix(".txt")
+            print(f"Saving script to {script_path}...")
+            script_path.write_text(script, encoding="utf-8")
+        except Exception as e:
+            print(f"Warning: Could not save script file: {e}")
         
         # 3. Generate TTS audio
         print(f"Generating speech with {voice} voice...")
@@ -161,6 +169,7 @@ def _generate_video_sync(github_url: str, voice: str, output_path: Path) -> Path
             audio_path=audio_path,
             words=words,
             output_path=output_path,
+            subtitle_style=subtitle_style,
         )
         
         return output_path
@@ -217,17 +226,21 @@ async def generate_video(request: GenerateVideoRequest):
             github_url=request.github_url,
             voice=request.voice,
             output_path=output_path,
+            subtitle_style=request.subtitle_style,
         )
         
         if not output_path.exists():
             raise HTTPException(status_code=500, detail="Video generation failed - file not created")
+        
+        r2_url = uploader.upload_file(output_path)
         
         return FileResponse(
             path=str(output_path),
             media_type="video/mp4",
             filename=f"brainrot_{job_id}.mp4",
             headers={
-                "Content-Disposition": f'attachment; filename="brainrot_{job_id}.mp4"'
+                "Content-Disposition": f'attachment; filename="brainrot_{job_id}.mp4"',
+                "X-R2-URL": r2_url or ""
             }
         )
         
@@ -253,10 +266,14 @@ async def generate_video_base64(request: GenerateVideoRequest):
             github_url=request.github_url,
             voice=request.voice,
             output_path=output_path,
+            subtitle_style=request.subtitle_style,
         )
         
         if not output_path.exists():
             raise HTTPException(status_code=500, detail="Video generation failed - file not created")
+        
+        # Upload to R2 before cleanup
+        r2_url = uploader.upload_file(output_path)
         
         # Read and encode as base64
         video_bytes = output_path.read_bytes()
@@ -271,6 +288,7 @@ async def generate_video_base64(request: GenerateVideoRequest):
             "content_type": "video/mp4",
             "video_base64": video_base64,
             "size_bytes": len(video_bytes),
+            "r2_url": r2_url
         }
         
     except ValueError as e:
@@ -295,10 +313,14 @@ async def generate_video_stream(request: GenerateVideoRequest):
             github_url=request.github_url,
             voice=request.voice,
             output_path=output_path,
+            subtitle_style=request.subtitle_style,
         )
         
         if not output_path.exists():
             raise HTTPException(status_code=500, detail="Video generation failed - file not created")
+        
+        # Upload to R2
+        r2_url = uploader.upload_file(output_path)
         
         def iterfile():
             with open(output_path, "rb") as f:
@@ -316,6 +338,7 @@ async def generate_video_stream(request: GenerateVideoRequest):
                 "Content-Disposition": f'attachment; filename="brainrot_{job_id}.mp4"',
                 "Content-Length": str(file_size),
                 "X-Job-Id": job_id,
+                "X-R2-URL": r2_url or ""
             }
         )
         
@@ -341,10 +364,14 @@ async def generate_video_multipart(request: GenerateVideoRequest):
             github_url=request.github_url,
             voice=request.voice,
             output_path=output_path,
+            subtitle_style=request.subtitle_style,
         )
         
         if not output_path.exists():
             raise HTTPException(status_code=500, detail="Video generation failed - file not created")
+        
+        # Upload to R2
+        r2_url = uploader.upload_file(output_path)
         
         # Read video data
         video_bytes = output_path.read_bytes()
@@ -361,11 +388,12 @@ async def generate_video_multipart(request: GenerateVideoRequest):
             "status": "completed",
             "filename": f"brainrot_{job_id}.mp4",
             "size_bytes": len(video_bytes),
+            "r2_url": r2_url
         }
         body_parts.append(f"--{boundary}\r\n")
         body_parts.append('Content-Disposition: form-data; name="metadata"\r\n')
         body_parts.append("Content-Type: application/json\r\n\r\n")
-        body_parts.append(f'{{"job_id": "{job_id}", "status": "completed", "filename": "brainrot_{job_id}.mp4", "size_bytes": {len(video_bytes)}}}\r\n')
+        body_parts.append(f'{{"job_id": "{job_id}", "status": "completed", "filename": "brainrot_{job_id}.mp4", "size_bytes": {len(video_bytes)}, "r2_url": "{r2_url}"}}\r\n')
         
         # Part 2: Video file
         body_parts.append(f"--{boundary}\r\n")
@@ -387,6 +415,7 @@ async def generate_video_multipart(request: GenerateVideoRequest):
             media_type=f"multipart/form-data; boundary={boundary}",
             headers={
                 "X-Job-Id": job_id,
+                "X-R2-URL": r2_url or ""
             }
         )
         

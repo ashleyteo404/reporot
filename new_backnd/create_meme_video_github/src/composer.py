@@ -40,13 +40,26 @@ def get_audio_duration(audio_path: str | Path) -> float:
     return float(data["format"]["duration"])
 
 
-def generate_ass_subtitles(words: list[dict], output_path: Path, video_width: int = 1080, video_height: int = 1920) -> None:
+def generate_ass_subtitles(words: list[dict], output_path: Path, video_width: int = 1080, video_height: int = 1920, style: str = "brainrot") -> None:
     """
-    Generate ASS subtitle file with brainrot-style word-by-word captions.
+    Generate ASS subtitle file with specified style.
+    Args:
+        style: 'brainrot' (large, rapid) or 'standard' (readable, bottom)
     """
-    # ASS header with style
+    
+    if style == "standard":
+        # Standard subtitle style (grouped phrases)
+        header_style = "Style: Default,Arial,40,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,2,0,2,10,10,60,1"
+        title = "Standard Captions"
+    else:
+        # Brainrot style (updated): Grouped phrases centered in the middle
+        # Alignment 5 = Middle Center
+        # Fontsize 50 (Similar to Standard but slightly larger for center focus)
+        header_style = "Style: Default,Arial,50,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,5,0,5,10,10,10,1"
+        title = "Brainrot Captions"
+
     ass_content = f"""[Script Info]
-Title: Brainrot Captions
+Title: {title}
 ScriptType: v4.00+
 PlayResX: {video_width}
 PlayResY: {video_height}
@@ -54,23 +67,41 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,90,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,4,0,2,10,10,350,1
+{header_style}
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
 
-    for word_info in words:
-        word = word_info["word"].strip().upper()
-        start = word_info["start"]
-        end = word_info["end"]
+    if style == "standard":
+        # Group words into chunks of ~4 words for better readability
+        WORDS_PER_CHUNK = 4
+        for i in range(0, len(words), WORDS_PER_CHUNK):
+            chunk = words[i:i + WORDS_PER_CHUNK]
+            if not chunk:
+                continue
 
-        # Format time as H:MM:SS.cc
-        start_str = format_ass_time(start)
-        end_str = format_ass_time(end)
+            text = " ".join(w["word"].strip().upper() for w in chunk)
+            start = chunk[0]["start"]
+            end = chunk[-1]["end"]
+            start_str = format_ass_time(start)
+            end_str = format_ass_time(end)
+            ass_content += f"Dialogue: 0,{start_str},{end_str},Default,,0,0,0,,{text}\n"
+            
+    else:
+        # Brainrot (Updated): Also use grouped phrases, but they will be centered due to header_style
+        WORDS_PER_CHUNK = 4
+        for i in range(0, len(words), WORDS_PER_CHUNK):
+            chunk = words[i:i + WORDS_PER_CHUNK]
+            if not chunk:
+                continue
 
-        # Add the dialogue line
-        ass_content += f"Dialogue: 0,{start_str},{end_str},Default,,0,0,0,,{word}\n"
+            text = " ".join(w["word"].strip().upper() for w in chunk)
+            start = chunk[0]["start"]
+            end = chunk[-1]["end"]
+            start_str = format_ass_time(start)
+            end_str = format_ass_time(end)
+            ass_content += f"Dialogue: 0,{start_str},{end_str},Default,,0,0,0,,{text}\n"
 
     output_path.write_text(ass_content)
 
@@ -90,6 +121,7 @@ def compose_video(
     words: list[dict],
     output_path: str | Path,
     target_resolution: tuple[int, int] = (1080, 1920),  # Vertical video
+    subtitle_style: str = "brainrot",
 ) -> Path:
     """
     Compose the final brainrot video using FFmpeg.
@@ -118,7 +150,7 @@ def compose_video(
     with tempfile.NamedTemporaryFile(mode='w', suffix='.ass', delete=False) as f:
         subtitle_path = Path(f.name)
 
-    generate_ass_subtitles(words, subtitle_path, width, height)
+    generate_ass_subtitles(words, subtitle_path, width, height, style=subtitle_style)
 
     # Build FFmpeg command
     # 1. Loop background video, scale/crop to target resolution
@@ -168,14 +200,29 @@ def compose_video(
     ]
 
     print(f"  Running FFmpeg...")
-    print(f"  Command: {' '.join(cmd)}")  # Debug: print full command
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Use Popen to stream progress to stdout so user doesn't think it's stuck
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        universal_newlines=True
+    )
 
-    if result.returncode != 0:
-        print(f"FFmpeg error: {result.stderr}")
-        print(f"FFmpeg stdout: {result.stdout}")
-        print(f"Filter complex: {filter_complex}")
-        raise RuntimeError(f"FFmpeg failed: {result.stderr}")
+    if process.stdout:
+        for line in process.stdout:
+            # Only print lines that look like progress to avoid cluttering
+            if "frame=" in line or "time=" in line or "fps=" in line:
+                print(f"\r  FFmpeg Progress: {line.strip()}", end="", flush=True)
+            elif "Error" in line:
+                print(f"\n  FFmpeg: {line.strip()}")
+
+    process.wait()
+    print("\n  FFmpeg process finished.")
+
+    if process.returncode != 0:
+        raise RuntimeError(f"FFmpeg failed with return code {process.returncode}")
 
     # Clean up temp subtitle file
     subtitle_path.unlink()

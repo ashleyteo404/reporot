@@ -1,7 +1,12 @@
 """Fetch README.md from GitHub repositories."""
 
 import re
+import os
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 
 def parse_github_url(url: str) -> tuple[str, str]:
@@ -48,16 +53,20 @@ def fetch_readme(repo_url: str) -> str:
     # Try common README filenames
     readme_names = ["README.md", "readme.md", "Readme.md", "README.MD", "README"]
 
+    headers = {}
+    if GITHUB_TOKEN:
+        headers["Authorization"] = f"token {GITHUB_TOKEN}"
+
     for name in readme_names:
         url = f"https://raw.githubusercontent.com/{owner}/{repo}/main/{name}"
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=10, headers=headers)
 
         if response.status_code == 200:
             return response.text
 
         # Try master branch if main doesn't exist
         url = f"https://raw.githubusercontent.com/{owner}/{repo}/master/{name}"
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=10, headers=headers)
 
         if response.status_code == 200:
             return response.text

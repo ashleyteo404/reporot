@@ -8,7 +8,7 @@ Once everything is set up, here are the commands to run both servers:
 
 **Terminal 1 - Backend:**
 ```powershell
-cd reporot-backend
+cd reporot-backenda
 .\.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000
 ```
 > Note: database is disabled by default (`DB_DISABLED=true`) so the API can start without Postgres. Flip it to `false` in `.env.development` when you want to connect to a real DB.
