@@ -1,165 +1,44 @@
-# GitHub Meme Video Generator API
+# Brainrot Plus: Inverse Digital Fentanyl
 
-A FastAPI server that generates brainrot-style meme videos from GitHub repository READMEs.
+## Inspiration
+Social media platforms like Instagram and TikTok have given rise to a phenomenon where the younger generation is developing shorter attention spans due to the addictive nature of entertaining but often low-quality content. This content not only consumes precious time that could be used for more productive activities but also lacks educational value. Our idea is to leverage the addictive and easy-to-consume nature of such content to make it both educational and helpful.
 
-## Features
 
-- **GitHub URL Sanitization**: Validates and sanitizes GitHub URLs to prevent injection attacks
-- **Multiple Response Formats**: Choose how you want your video delivered
-  - File download (standard)
-  - Base64 encoded JSON
-  - Streaming response
-  - Multipart form data (Postman-friendly)
+## What it Does
+Brainrot Plus takes a piece of text, whether it's lecture notes, book chapters, or complex concepts, and utilizes AI to transform it into easy-to-understand reels. The process involves:
 
-## Quick Start
+1. Summarizing and simplifying the information.
+2. Extracting key points and generating keywords for relevant images.
+3. Generating a narration script for a text-to-speech AI, broken down into scenes with voiceovers and images.
+4. Using a text-to-speech model to create an AI voiceover of the script.
+5. Employing a web scraper to fetch relevant images from Google using generated keywords.
+6. Compiling all elements into a reel with text transitions and background gameplay footage, like Subway Surfers.
 
-### 1. Install Dependencies
+## How We Built It
+### Frontend
+- React + Vite
+- Tailwind CSS and Shacdn UI
 
-```bash
-pip install -r requirements.txt
-```
+### Backend
+- FastAPI
+- OpenAI
+- MoviePy
 
-### 2. Set Up Environment
+## Challenges We Ran Into
+- Achieving a TikTok-like scroll UI with autoplay and pause functionality during swipe/scroll.
+- Resolving Python dependencies and environment issues collaboratively as a team.
+- Programmatically generating videos with non-trivial custom transitions and inconsistent image formats.
+- Obtaining relevant images related to the text with consistency and accuracy.
 
-Create a `.env` file:
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-```
+## Accomplishments We're Proud Of
+Successfully generating reels dynamically and programmatically from an input passage of text.
 
-### 3. Add Background Videos
+## What We Learned
+- Working with text-to-speech models.
+- Programmatically generating videos using Python.
+- Prompting language models for desired outputs and information.
 
-Create a `backgrounds/` folder and add some MP4 videos (Subway Surfers, Minecraft parkour, etc.)
-
-### 4. Run the Server
-
-```bash
-python server.py
-```
-
-Or with uvicorn:
-```bash
-uvicorn server:app --reload --host 0.0.0.0 --port 8000
-```
-
-## API Endpoints
-
-All endpoints accept POST requests with JSON body:
-```json
-{
-  "github_url": "https://github.com/facebook/react",
-  "voice": "Puck"
-}
-```
-
-### Health Checks
-
-- `GET /` - Simple health check
-- `GET /health` - Detailed health status
-- `GET /voices` - List available TTS voices
-
-### Video Generation
-
-#### `POST /generate` - File Download
-Returns the video as a file download with `Content-Disposition: attachment`.
-
-```bash
-curl -X POST http://localhost:8000/generate \
-  -H "Content-Type: application/json" \
-  -d '{"github_url": "https://github.com/facebook/react"}' \
-  --output video.mp4
-```
-
-#### `POST /generate/base64` - Base64 Response
-Returns JSON with the video encoded as base64.
-
-```bash
-curl -X POST http://localhost:8000/generate/base64 \
-  -H "Content-Type: application/json" \
-  -d '{"github_url": "https://github.com/facebook/react"}'
-```
-
-Response:
-```json
-{
-  "job_id": "abc12345",
-  "status": "completed",
-  "content_type": "video/mp4",
-  "video_base64": "AAAAHGZ0eXBpc29...",
-  "size_bytes": 1234567
-}
-```
-
-#### `POST /generate/stream` - Streaming Response
-Streams the video bytes back as a response. Most efficient for large files.
-
-```bash
-curl -X POST http://localhost:8000/generate/stream \
-  -H "Content-Type: application/json" \
-  -d '{"github_url": "https://github.com/facebook/react"}' \
-  --output video.mp4
-```
-
-#### `POST /generate/multipart` - Multipart Form Response
-Returns the video along with metadata as multipart form data.
-Best for Postman testing.
-
-```bash
-curl -X POST http://localhost:8000/generate/multipart \
-  -H "Content-Type: application/json" \
-  -d '{"github_url": "https://github.com/facebook/react"}'
-```
-
-## Testing with Postman
-
-### File Download
-1. Create a new POST request to `http://localhost:8000/generate`
-2. Set body to raw JSON:
-   ```json
-   {
-     "github_url": "https://github.com/facebook/react"
-   }
-   ```
-3. Send the request
-4. Use "Save Response" to save the MP4 file
-
-### Base64 Response
-1. POST to `http://localhost:8000/generate/base64`
-2. Same JSON body
-3. Response will include `video_base64` field with the encoded video
-
-### Multipart Form
-1. POST to `http://localhost:8000/generate/multipart`
-2. Response contains both metadata and video file in multipart format
-
-## Available Voices
-
-Gemini TTS voices include:
-- **Puck** (Upbeat) - Default
-- **Kore** (Firm)
-- **Charon** (Informative)
-- **Fenrir** (Excitable)
-- **Leda** (Youthful)
-- **Zephyr** (Bright)
-- And many more...
-
-Legacy OpenAI voice names are also supported and mapped to similar voices:
-- `nova` → Puck
-- `alloy` → Kore
-- `echo` → Charon
-- `fable` → Aoede
-
-## URL Validation
-
-The API sanitizes GitHub URLs to prevent security issues:
-- Only allows `github.com` domain
-- Strips invalid characters
-- Accepts both full URLs and `owner/repo` format:
-  - `https://github.com/facebook/react` ✓
-  - `facebook/react` ✓
-  - `https://malicious-site.com/hack` ✗
-
-## Interactive API Docs
-
-Once the server is running, visit:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+## What's Next for Brainrot Plus
+- More variations on the format, e.g. different effects, variety of gameplay footage, etc.
+- Adding support for PDF and Word documents.
+- Enhancing the quality of reels to make them more entertaining and engaging to watch.

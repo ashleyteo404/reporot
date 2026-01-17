@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { videos } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
+import { sql } from "drizzle-orm";
 
 export async function saveVideo(data: {
     repoUrl: string;
@@ -32,11 +33,22 @@ export async function saveVideo(data: {
     }
 }
 
+
 export async function getVideos() {
     try {
         return await db.select().from(videos).orderBy(videos.createdAt);
     } catch (error) {
         console.error("Error fetching videos:", error);
         return [];
+    }
+}
+
+export async function getVideoByRepoUrl(repoUrl: string) {
+    try {
+        const result = await db.select().from(videos).where(sql`${videos.repoUrl} = ${repoUrl}`).limit(1);
+        return result[0] || null;
+    } catch (error) {
+        console.error("Error fetching video by URL:", error);
+        return null;
     }
 }

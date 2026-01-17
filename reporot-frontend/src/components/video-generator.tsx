@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Loader2, Video, Download, AlertCircle, ArrowRight, Github, PlayCircle } from "lucide-react"
-import { saveVideo } from "@/app/actions/video"
+import { saveVideo, getVideoByRepoUrl } from "@/app/actions/video"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -50,12 +50,24 @@ export function VideoGenerator() {
     },
   })
 
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true)
     setError(null)
     setVideoUrl(null)
 
     try {
+      // 1. Check for existing video
+      const existingVideo = await getVideoByRepoUrl(values.github_url)
+
+      if (existingVideo) {
+        console.log("Found cached video:", existingVideo)
+        setVideoUrl(existingVideo.videoUrl) // This should be the R2 URL
+        setLoading(false)
+        return
+      }
+
+      // 2. Generate new video if not found
       const response = await fetch("http://127.0.0.1:8000/generate", {
         method: "POST",
         headers: {
