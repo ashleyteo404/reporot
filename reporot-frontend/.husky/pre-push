@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running checks before git push"
+
+# Format
+pnpm run format:fix
+
+# Type check
+pnpm run typecheck
