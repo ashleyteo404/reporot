@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Clock,
   GitBranch,
+  Github,
   Link2,
   MousePointer2,
   PlayCircle,
@@ -12,69 +13,7 @@ import {
 import Link from 'next/link';
 
 import { VideoGenerator } from '@/components/video-generator';
-
-const popularRepos = [
-  {
-    name: 'facebook/react',
-    description:
-      'Declarative UIs for web and native. Build user interfaces from small, isolated pieces of code called components.',
-    stars: '206k',
-    stats: [
-      { label: 'Forks', value: '3k' },
-      { label: 'Open issues', value: '52' },
-      { label: 'Updated', value: '10d' },
-    ],
-    topics: ['JavaScript', 'Library'],
-    href: 'https://github.com/facebook/react',
-    image:
-      'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    name: 'tensorflow/tensorflow',
-    description:
-      'End-to-end open source platform for machine learning, used across research and production.',
-    stars: '182k',
-    stats: [
-      { label: 'Forks', value: '8k' },
-      { label: 'Open issues', value: '120' },
-      { label: 'Updated', value: '5d' },
-    ],
-    topics: ['Python', 'Machine Learning'],
-    href: 'https://github.com/tensorflow/tensorflow',
-    image:
-      'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    name: 'vuejs/vue',
-    description:
-      'Progressive framework for building user interfaces. Approachable, versatile, and performant.',
-    stars: '204k',
-    stats: [
-      { label: 'Forks', value: '4k' },
-      { label: 'Open issues', value: '38' },
-      { label: 'Updated', value: '6d' },
-    ],
-    topics: ['JavaScript', 'Framework'],
-    href: 'https://github.com/vuejs/vue',
-    image:
-      'https://images.unsplash.com/photo-1522199710521-72d69614c702?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    name: 'vinta/awesome-python',
-    description:
-      'A curated list of awesome Python frameworks, libraries, software, and resources.',
-    stars: '202k',
-    stats: [
-      { label: 'Forks', value: '3k' },
-      { label: 'Open issues', value: '5' },
-      { label: 'Updated', value: '2d' },
-    ],
-    topics: ['Python', 'Resources'],
-    href: 'https://github.com/vinta/awesome-python',
-    image:
-      'https://images.unsplash.com/photo-1504639725590-34d0984388bd?auto=format&fit=crop&w=1200&q=80',
-  },
-];
+import { getVideos } from '@/app/actions/video';
 
 const howItWorks = [
   {
@@ -98,6 +37,8 @@ const howItWorks = [
 ];
 
 export default async function DashboardPage() {
+  const videos = await getVideos();
+
   return (
     <main className="relative overflow-hidden bg-[#070f1d] text-slate-50 min-h-screen">
       <div className="pointer-events-none absolute inset-0">
@@ -106,16 +47,16 @@ export default async function DashboardPage() {
         <div className="absolute bottom-[-5%] left-10 h-64 w-64 rounded-full bg-emerald-500/10 blur-[120px]" />
       </div>
 
-      <div className="container relative z-10 flex flex-col gap-6 px-4 pb-12 pt-10 sm:gap-8 sm:px-6 sm:pb-16 sm:pt-12 lg:px-8">
+      <div className="container max-w-[1600px] relative z-10 flex flex-col gap-6 px-4 pb-12 pt-10 sm:gap-8 sm:px-6 sm:pb-16 sm:pt-12 lg:px-8">
         <header className="space-y-3 text-center sm:space-y-4">
           <div className="mx-auto inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
             <span>Meme Video Dashboard</span>
           </div>
-          <h1 className="text-3xl font-black leading-tight text-white sm:text-4xl md:text-5xl uppercase tracking-tighter">
+          <h1 className="text-3xl font-black leading-tight text-white sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-tighter">
             REPOROT DASHBOARD
           </h1>
-          <p className="mx-auto max-w-xl text-sm text-slate-300 sm:text-base">
+          <p className="mx-auto max-w-2xl text-sm text-slate-300 sm:text-lg">
             Turn your GitHub repos into viral content. The dashboard is now fully synced with your premium look.
           </p>
         </header>
@@ -123,67 +64,102 @@ export default async function DashboardPage() {
         <div className="flex justify-center gap-4">
           <Link
             href="/tiktok"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 via-emerald-400 to-green-400 text-slate-900 rounded-full font-bold hover:scale-105 transition-transform shadow-[0_0_30px_rgba(16,185,129,0.4)]"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-500 via-emerald-400 to-green-400 text-slate-900 rounded-full font-bold hover:scale-105 transition-transform shadow-[0_0_40px_rgba(16,185,129,0.5)]"
           >
             🔥 View Global Feed
           </Link>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-full font-bold hover:bg-white/10 transition-all"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-white/5 border border-white/10 text-white rounded-full font-bold hover:bg-white/10 transition-all"
           >
             Landing Page
           </Link>
         </div>
 
-        <section className="space-y-2 sm:space-y-3">
+        <section className="space-y-4">
           <div className="flex items-center gap-1.5 text-emerald-200">
-            <Video className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="text-sm font-semibold sm:text-base uppercase tracking-widest text-emerald-400/80">Generator Engine</span>
+            <Video className="h-4 w-4" />
+            <span className="text-base font-semibold uppercase tracking-widest text-emerald-400/80">Generator Engine</span>
           </div>
 
-          <div className="rounded-2xl border border-emerald-400/25 bg-gradient-to-b from-[#0d1629] to-[#080f1d] p-6 shadow-[0_0_50px_rgba(16,185,129,0.15)] sm:p-10">
+          <div className="rounded-3xl border border-emerald-400/25 bg-gradient-to-b from-[#0d1629] to-[#080f1d] p-6 shadow-[0_0_60px_rgba(16,185,129,0.2)] sm:p-12">
             <VideoGenerator />
           </div>
         </section>
 
-        <section className="space-y-3 sm:space-y-4">
+        <section className="space-y-6">
           <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-1.5 text-emerald-200">
-              <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="text-sm font-semibold sm:text-base">
-                Popular Repositories
+              <Star className="h-5 w-5" />
+              <span className="text-xl font-bold text-white uppercase tracking-tight">
+                Your Brainrot Collection
               </span>
             </div>
           </div>
 
-          <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
-            {popularRepos.map((repo) => (
-              <div
-                key={repo.name}
-                className="group overflow-hidden rounded-xl border border-emerald-400/25 bg-[#0d1626] shadow-[0_0_30px_rgba(16,185,129,0.18)] transition duration-300 hover:border-emerald-300/40 sm:rounded-2xl"
-              >
-                <div className="relative h-32 w-full overflow-hidden sm:h-36">
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
-                    style={{ backgroundImage: `url(${repo.image})` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                  <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full border border-emerald-400/40 bg-black/50 px-2 py-0.5 text-xs font-semibold text-emerald-200 backdrop-blur sm:right-3 sm:top-3 sm:px-2.5 sm:py-1">
-                    <Star className="h-3.5 w-3.5 fill-emerald-300 text-emerald-300 sm:h-4 sm:w-4" />
-                    {repo.stars}
-                  </div>
-                </div>
-
-                <div className="space-y-2 p-3 sm:p-4">
-                  <h3 className="text-base font-semibold text-white group-hover:text-emerald-200 transition sm:text-lg">
-                    {repo.name}
-                  </h3>
-                  <p className="text-xs leading-relaxed text-slate-300 sm:text-sm">
-                    {repo.description}
-                  </p>
-                </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            {videos.length === 0 ? (
+              <div className="col-span-full py-32 text-center border-2 border-dashed border-emerald-500/20 rounded-3xl bg-white/5">
+                <p className="text-slate-400 italic text-lg">No videos generated yet. Drop a URL above to start cooking!</p>
               </div>
-            ))}
+            ) : (
+              videos.map((video) => (
+                <Link
+                  key={video.id}
+                  href={`/tiktok?v=${video.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative overflow-hidden rounded-3xl border border-emerald-400/25 bg-[#0d1626] shadow-[0_0_40px_rgba(16,185,129,0.15)] transition-all duration-500 hover:border-emerald-300/40 hover:-translate-y-2"
+                >
+                  <div className="relative h-56 w-full overflow-hidden">
+                    <div
+                      className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-110"
+                      style={{ backgroundImage: `url(https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80)` }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d1626] via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-emerald-950/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-16 h-16 bg-emerald-500/20 backdrop-blur-md rounded-full flex items-center justify-center border border-emerald-400/40 opacity-0 group-hover:opacity-100 transition-all transform scale-50 group-hover:scale-100 duration-500">
+                        <PlayCircle className="w-8 h-8 text-emerald-400 fill-emerald-400/20" />
+                      </div>
+                    </div>
+
+                    <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-black/60 px-3 py-1 text-[10px] font-black text-emerald-200 backdrop-blur-lg uppercase tracking-widest shadow-xl">
+                      <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      {video.subtitleStyle}
+                    </div>
+                  </div>
+
+                  <div className="p-6 space-y-3">
+                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-emerald-400 font-black">
+                      <Github className="h-3 w-3" />
+                      Repository Found
+                    </div>
+                    <h3 className="text-2xl font-black text-white group-hover:text-emerald-400 transition truncate tracking-tight">
+                      {video.repoName}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-slate-400 line-clamp-2">
+                      {video.repoDescription || `Mind-blowing brainrot summary of the ${video.repoName} repository. Witness the power of automated content creation.`}
+                    </p>
+
+                    <div className="pt-4 flex items-center justify-between border-t border-white/5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-xs border border-emerald-400/20">
+                          {(video.repoName?.[0] || '?').toUpperCase()}
+                        </div>
+                        <span className="text-xs text-slate-500 font-mono">
+                          {video.createdAt ? new Date(video.createdAt).toLocaleDateString() : 'Just now'}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-emerald-400 font-black flex items-center gap-1.5 transition-all group-hover:gap-2.5">
+                        WATCH NOW <ArrowRight className="h-3 w-3" />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
         </section>
 

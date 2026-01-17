@@ -8,11 +8,28 @@ import { Video as VideoType } from "@/lib/db/schema"
 
 interface VideoFeedProps {
     initialVideos: VideoType[]
+    initialVideoId?: string | null
 }
 
-export function VideoFeed({ initialVideos }: VideoFeedProps) {
-    const [activeIndex, setActiveIndex] = useState(0)
+export function VideoFeed({ initialVideos, initialVideoId }: VideoFeedProps) {
+    const findInitialIndex = () => {
+        if (!initialVideoId) return 0;
+        const index = initialVideos.findIndex(v => String(v.id) === initialVideoId || v.jobId === initialVideoId);
+        return index !== -1 ? index : 0;
+    };
+
+    const [activeIndex, setActiveIndex] = useState(findInitialIndex)
     const containerRef = useRef<HTMLDivElement>(null)
+
+    // Scroll to initial video on mount
+    useEffect(() => {
+        if (containerRef.current && activeIndex > 0) {
+            containerRef.current.scrollTo({
+                top: activeIndex * containerRef.current.clientHeight,
+                behavior: "instant" as ScrollBehavior
+            })
+        }
+    }, [])
 
     const handleScroll = () => {
         if (!containerRef.current) return
