@@ -126,6 +126,16 @@ def compose_video(
     # 3. Add audio
     # 4. Burn in subtitles
 
+    # Convert subtitle path for FFmpeg ASS filter
+    # On Windows, complex escaping is required for the filter graph
+    
+    # 1. Convert backslashes to forward slashes
+    subtitle_path_str = str(subtitle_path).replace('\\', '/')
+    
+    # 2. Escape the colon in the drive letter (e.g. C:/ -> C\:/)
+    # This is crucial because colon is a delimiter in FFmpeg filters
+    subtitle_path_str = subtitle_path_str.replace(':', '\\:')
+    
     filter_complex = (
         # Scale video to fill target resolution (crop to fit)
         f"[0:v]scale={width}:{height}:force_original_aspect_ratio=increase,"
@@ -135,8 +145,10 @@ def compose_video(
         # Trim to audio duration
         f"trim=duration={audio_duration},"
         f"setpts=PTS-STARTPTS,"
-        # Burn in subtitles
-        f"ass='{subtitle_path}'[v]"
+        # Burn in subtitles - use explicit filename= parameter
+        # AND single quotes around the path to handle potential spaces/chars
+        f"ass=filename='{subtitle_path_str}'"
+        "[v]"
     )
 
     cmd = [
@@ -156,10 +168,13 @@ def compose_video(
     ]
 
     print(f"  Running FFmpeg...")
+    print(f"  Command: {' '.join(cmd)}")  # Debug: print full command
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode != 0:
         print(f"FFmpeg error: {result.stderr}")
+        print(f"FFmpeg stdout: {result.stdout}")
+        print(f"Filter complex: {filter_complex}")
         raise RuntimeError(f"FFmpeg failed: {result.stderr}")
 
     # Clean up temp subtitle file

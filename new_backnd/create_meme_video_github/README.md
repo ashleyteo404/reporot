@@ -1,124 +1,165 @@
-# Brainrot Video Generator
+# GitHub Meme Video Generator API
 
-Create viral-style "brainrot" videos from GitHub repository README files. Generates a summarized script, text-to-speech narration, and composites it over gameplay footage with captions.
+A FastAPI server that generates brainrot-style meme videos from GitHub repository READMEs.
 
-## Requirements
+## Features
 
-- **Python 3.12** (required - Python 3.13 is not supported due to dependency compatibility)
-- **uv** (recommended package manager)
-- **FFmpeg** (for video processing)
-- **Gemini API key**
+- **GitHub URL Sanitization**: Validates and sanitizes GitHub URLs to prevent injection attacks
+- **Multiple Response Formats**: Choose how you want your video delivered
+  - File download (standard)
+  - Base64 encoded JSON
+  - Streaming response
+  - Multipart form data (Postman-friendly)
 
-## Setup
+## Quick Start
 
-### 1. Install uv (if not already installed)
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-### 2. Create virtual environment with Python 3.12
+### 1. Install Dependencies
 
 ```bash
-uv venv --python 3.12 .venv
+pip install -r requirements.txt
 ```
 
-### 3. Activate the virtual environment
+### 2. Set Up Environment
 
-```bash
-source .venv/bin/activate
-```
-
-### 4. Install dependencies
-
-```bash
-uv pip install -r requirements.txt
-```
-
-### 5. Set up environment variables
-
-Copy the example env file and add your Gemini API key:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and add your key:
-```
+Create a `.env` file:
+```env
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-### 6. Add background videos
+### 3. Add Background Videos
 
-Create a `backgrounds/` folder and add gameplay videos (Subway Surfers, Minecraft parkour, satisfying clips, etc.):
+Create a `backgrounds/` folder and add some MP4 videos (Subway Surfers, Minecraft parkour, etc.)
 
-```bash
-mkdir -p backgrounds
-# Add your .mp4 files to this folder
-```
-
-## Usage
-
-### From a GitHub repository
+### 4. Run the Server
 
 ```bash
-python main.py https://github.com/facebook/react
-python main.py anthropics/claude-code --voice Puck
+python server.py
 ```
 
-### From a local README file
+Or with uvicorn:
+```bash
+uvicorn server:app --reload --host 0.0.0.0 --port 8000
+```
+
+## API Endpoints
+
+All endpoints accept POST requests with JSON body:
+```json
+{
+  "github_url": "https://github.com/facebook/react",
+  "voice": "Puck"
+}
+```
+
+### Health Checks
+
+- `GET /` - Simple health check
+- `GET /health` - Detailed health status
+- `GET /voices` - List available TTS voices
+
+### Video Generation
+
+#### `POST /generate` - File Download
+Returns the video as a file download with `Content-Disposition: attachment`.
 
 ```bash
-python main.py --readme path/to/README.md
-python main.py -r oai_readme.md --output openai_brainrot.mp4
+curl -X POST http://localhost:8000/generate \
+  -H "Content-Type: application/json" \
+  -d '{"github_url": "https://github.com/facebook/react"}' \
+  --output video.mp4
 ```
 
-### List available voices
+#### `POST /generate/base64` - Base64 Response
+Returns JSON with the video encoded as base64.
 
 ```bash
-python main.py --list-voices
+curl -X POST http://localhost:8000/generate/base64 \
+  -H "Content-Type: application/json" \
+  -d '{"github_url": "https://github.com/facebook/react"}'
 ```
 
-### Options
+Response:
+```json
+{
+  "job_id": "abc12345",
+  "status": "completed",
+  "content_type": "video/mp4",
+  "video_base64": "AAAAHGZ0eXBpc29...",
+  "size_bytes": 1234567
+}
+```
 
-| Option | Description |
-|--------|-------------|
-| `repo` | GitHub repository URL or `owner/repo` format |
-| `--readme, -r` | Path to a local README file |
-| `--voice` | TTS voice to use (default: Puck) |
-| `--output, -o` | Output filename |
-| `--backgrounds` | Directory with background videos (default: `backgrounds/`) |
-| `--skip-summary` | Use raw README without AI summarization |
-| `--list-voices` | Show all available voices |
-
-## Troubleshooting
-
-### Python 3.13 compatibility issues
-
-If you see errors about `ctranslate2`, `llvmlite`, or missing wheels for `cp313`, you need to use Python 3.12:
+#### `POST /generate/stream` - Streaming Response
+Streams the video bytes back as a response. Most efficient for large files.
 
 ```bash
-# Check your Python version
-python --version
-
-# If using Python 3.13, create a new venv with 3.12
-uv venv --python 3.12 .venv
-source .venv/bin/activate
-uv pip install -r requirements.txt
+curl -X POST http://localhost:8000/generate/stream \
+  -H "Content-Type: application/json" \
+  -d '{"github_url": "https://github.com/facebook/react"}' \
+  --output video.mp4
 ```
 
-### FFmpeg not found
-
-Install FFmpeg:
+#### `POST /generate/multipart` - Multipart Form Response
+Returns the video along with metadata as multipart form data.
+Best for Postman testing.
 
 ```bash
-# macOS
-brew install ffmpeg
-
-# Ubuntu/Debian
-sudo apt install ffmpeg
+curl -X POST http://localhost:8000/generate/multipart \
+  -H "Content-Type: application/json" \
+  -d '{"github_url": "https://github.com/facebook/react"}'
 ```
 
-## Output
+## Testing with Postman
 
-Videos are saved to the `output/` directory by default.
+### File Download
+1. Create a new POST request to `http://localhost:8000/generate`
+2. Set body to raw JSON:
+   ```json
+   {
+     "github_url": "https://github.com/facebook/react"
+   }
+   ```
+3. Send the request
+4. Use "Save Response" to save the MP4 file
+
+### Base64 Response
+1. POST to `http://localhost:8000/generate/base64`
+2. Same JSON body
+3. Response will include `video_base64` field with the encoded video
+
+### Multipart Form
+1. POST to `http://localhost:8000/generate/multipart`
+2. Response contains both metadata and video file in multipart format
+
+## Available Voices
+
+Gemini TTS voices include:
+- **Puck** (Upbeat) - Default
+- **Kore** (Firm)
+- **Charon** (Informative)
+- **Fenrir** (Excitable)
+- **Leda** (Youthful)
+- **Zephyr** (Bright)
+- And many more...
+
+Legacy OpenAI voice names are also supported and mapped to similar voices:
+- `nova` → Puck
+- `alloy` → Kore
+- `echo` → Charon
+- `fable` → Aoede
+
+## URL Validation
+
+The API sanitizes GitHub URLs to prevent security issues:
+- Only allows `github.com` domain
+- Strips invalid characters
+- Accepts both full URLs and `owner/repo` format:
+  - `https://github.com/facebook/react` ✓
+  - `facebook/react` ✓
+  - `https://malicious-site.com/hack` ✗
+
+## Interactive API Docs
+
+Once the server is running, visit:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
