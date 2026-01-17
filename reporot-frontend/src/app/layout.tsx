@@ -2,7 +2,6 @@ import '@/styles/globals.css';
 import { Metadata } from 'next';
 
 import { Analytics } from '@/components/analytics';
-import { SiteHeader } from '@/components/site-header';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { ThemeProvider } from '@/components/theme-provider';
 import { seoMetaData } from '@/config/seo-meta-data';
@@ -51,7 +50,6 @@ export default function RootLayout({
             enableSystem
           >
             <div className="relative flex min-h-screen flex-col">
-              <SiteHeader />
               <div className="flex-1">{children}</div>
             </div>
             <Analytics />
