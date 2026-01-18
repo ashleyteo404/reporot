@@ -64,7 +64,7 @@ async function generateForRepo(repoPath: string) {
             repoName: repoPath,
             videoUrl: r2Url,
             subtitleStyle: "brainrot",
-            repoDescription: `Famous repo: ${repoPath}. Captured via automation script.`,
+            repoDescription: `Repository: ${repoPath}.`,
             stars: 1000
         });
 
