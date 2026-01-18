@@ -120,7 +120,7 @@ def compose_video(
     audio_path: str | Path,
     words: list[dict],
     output_path: str | Path,
-    target_resolution: tuple[int, int] = (1080, 1920),  # Vertical video
+    target_resolution: tuple[int, int] = (720, 1280),  # Vertical video (720p)
     subtitle_style: str = "brainrot",
 ) -> Path:
     """
@@ -191,8 +191,8 @@ def compose_video(
         "-map", "[v]",
         "-map", "1:a",
         "-c:v", "libx264",
-        "-preset", "medium",
-        "-crf", "23",
+        "-preset", "ultrafast",
+        "-crf", "26",
         "-c:a", "aac",
         "-b:a", "192k",
         "-shortest",

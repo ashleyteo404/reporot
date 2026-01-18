@@ -32,7 +32,7 @@ export function BrainrotGenerator() {
                 if (vids.length > 0) {
                     const urls = vids.map(getVideoUrl);
                     setVideos(urls);
-                    setCurrentVideo(urls[urls.length - 1]);
+                    setCurrentVideo(urls[urls.length - 1] ?? null);
                     setStatus('ready');
                 } else {
                     setTimeout(poll, 2000);
@@ -101,8 +101,14 @@ export function BrainrotGenerator() {
 
             <CardContent className="space-y-4">
                 {error && (
-                    <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                        {error}
+                    <div className={cn(
+                        "rounded-md p-3 text-sm flex flex-col gap-2",
+                        error.includes("limit") ? "bg-yellow-500/10 text-yellow-500" : "bg-destructive/10 text-destructive"
+                    )}>
+                        <p className="font-semibold">{error}</p>
+                        {error.includes("limit") && (
+                            <p className="text-xs opacity-90">Please wait a while before generating another video.</p>
+                        )}
                     </div>
                 )}
 

@@ -99,20 +99,34 @@ def generate_speech(
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash-preview-tts",
-        contents=text,
-        config=types.GenerateContentConfig(
-            response_modalities=["AUDIO"],
-            speech_config=types.SpeechConfig(
-                voice_config=types.VoiceConfig(
-                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                        voice_name=voice_name,
-                    )
-                )
-            ),
-        ),
-    )
+    import time
+    
+    response = None
+    retries = 3
+    for attempt in range(retries):
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash-preview-tts",
+                contents=text,
+                config=types.GenerateContentConfig(
+                    tools=[],
+                    response_modalities=["AUDIO"],
+                    speech_config=types.SpeechConfig(
+                        voice_config=types.VoiceConfig(
+                            prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                voice_name=voice_name,
+                            )
+                        )
+                    ),
+                ),
+            )
+            break
+        except Exception as e:
+            if ("503" in str(e) or "429" in str(e)) and attempt < retries - 1:
+                print(f"  TTS API Error (503/429): {e}. Retrying in 2s...")
+                time.sleep(2)
+                continue
+            raise e
 
     # Extract audio data from response
     audio_data = response.candidates[0].content.parts[0].inline_data.data

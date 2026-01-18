@@ -247,7 +247,13 @@ async def generate_video(request: GenerateVideoRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Video generation failed: {str(e)}")
+        error_msg = str(e)
+        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+            raise HTTPException(
+                status_code=429, 
+                detail="Daily AI limit reached. Please try again tomorrow or upgrade your plan."
+            )
+        raise HTTPException(status_code=500, detail=f"Video generation failed: {error_msg}")
 
 
 @app.post("/generate/base64", tags=["Video Generation"])

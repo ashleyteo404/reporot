@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -40,6 +40,27 @@ export function VideoGenerator() {
   const [loading, setLoading] = useState(false)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [loadingText, setLoadingText] = useState("Cooking Brainrot...")
+
+  const LOADING_PHRASES = [
+    "Compiling the rot...",
+    "Locking in...",
+    "Farming content...",
+    "Cooking Brainrot..."
+  ]
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (loading) {
+      let index = 0
+      setLoadingText(LOADING_PHRASES[0] || "Cooking...") // Reset start
+      interval = setInterval(() => {
+        index++
+        setLoadingText(LOADING_PHRASES[index % LOADING_PHRASES.length] || "Cooking...")
+      }, 2000)
+    }
+    return () => clearInterval(interval)
+  }, [loading])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -183,6 +204,10 @@ export function VideoGenerator() {
             </Alert>
           )}
 
+
+
+
+
           <Button
             type="submit"
             disabled={loading}
@@ -191,11 +216,11 @@ export function VideoGenerator() {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Cooking Brainrot...
+                {loadingText}
               </>
             ) : (
               <>
-                Generate Meme Video
+                Generate Brainrot Video
                 <ArrowRight className="ml-2 h-5 w-5" />
               </>
             )}

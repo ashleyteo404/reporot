@@ -65,7 +65,7 @@ export default async function DashboardPage() {
             REPOROT DASHBOARD
           </h1>
           <p className="mx-auto max-w-2xl text-sm text-slate-300 sm:text-lg">
-            Turn your GitHub repos into viral content. The dashboard is now fully synced with your premium look.
+            Turn your GitHub repos into viral brainrot videos! You might just discover a broken new learning technique for developers.
           </p>
         </header>
 
